@@ -4,11 +4,45 @@ import { User, Bell, Shield, Lock, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import '../App.css';
 
+import api from '../api/axios';
+
 const SettingsPage = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [rainToggle, setRainToggle] = useState(true);
   const [heatToggle, setHeatToggle] = useState(true);
   const [pollutionToggle, setPollutionToggle] = useState(false);
+  
+  const [name, setName] = useState(user.name || "");
+  const [email, setEmail] = useState(user.email || "");
+  const [phone, setPhone] = useState(user.phone || "+91 98765 43210");
+  const [isSaving, setIsSaving] = useState(false);
+  const [policyData, setPolicyData] = useState(null);
+
+  React.useEffect(() => {
+    if (!user.id) return;
+    api.get(`/api/policy/get?userId=${user.id}`)
+      .then(res => {
+        const activePolicy = Array.isArray(res.data) ? res.data.find(p => p.status === 'ACTIVE') : res.data;
+        setPolicyData(activePolicy);
+      })
+      .catch(err => console.error("Settings: Policy fetch error:", err));
+  }, [user.id]);
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      if(!user.id) return;
+      await api.put('/api/user/update', { userId: user.id, name, email, city: user.city, location: user.location });
+      const updatedUser = { ...user, name, email };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      alert("Profile updated successfully!");
+    } catch (err) {
+      alert("Failed to update profile: " + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F8FAFC' }}>
@@ -26,18 +60,18 @@ const SettingsPage = () => {
             </h3>
             <div className="form-group">
               <label className="form-label">Full Name</label>
-              <input type="text" className="form-input" defaultValue="Rahul Kumar" />
+              <input type="text" className="form-input" value={name} onChange={e => setName(e.target.value)} />
             </div>
             <div className="form-group">
               <label className="form-label">Email Address</label>
-              <input type="email" className="form-input" defaultValue="rahul.kumar@partner.zepto.in" />
+              <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
             <div className="form-group" style={{ marginBottom: '2rem' }}>
               <label className="form-label">Phone Number</label>
-              <input type="tel" className="form-input" defaultValue="+91 98765 43210" />
+              <input type="tel" className="form-input" value={phone} onChange={e => setPhone(e.target.value)} />
             </div>
-            <button className="btn-outline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#3b82f6', borderColor: '#3b82f6', marginTop: 'auto' }}>
-              <Save size={18} /> Save Profile
+            <button onClick={handleSaveProfile} disabled={isSaving} className="btn-outline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#3b82f6', borderColor: '#3b82f6', marginTop: 'auto' }}>
+              <Save size={18} /> {isSaving ? "Saving..." : "Save Profile"}
             </button>
           </div>
 
@@ -70,15 +104,15 @@ const SettingsPage = () => {
             <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <span style={{ color: '#64748b', fontWeight: '600' }}>Active Subscription</span>
-                <strong style={{ color: '#1e293b' }}>Comprehensive</strong>
+                <strong style={{ color: '#1e293b' }}>{policyData?.planType || 'Basic Plan'}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <span style={{ color: '#64748b', fontWeight: '600' }}>Weekly Deduction</span>
-                <strong style={{ color: '#10b981' }}>₹15/week</strong>
+                <strong style={{ color: '#10b981' }}>₹{policyData?.premium || 0}/week</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#64748b', fontWeight: '600' }}>Max Coverage Limit</span>
-                <strong style={{ color: '#3b82f6' }}>₹10,000</strong>
+                <strong style={{ color: '#3b82f6' }}>₹{Number(policyData?.coverage || 0).toLocaleString()}</strong>
               </div>
             </div>
             <button onClick={() => navigate('/pricing')} className="btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
@@ -102,7 +136,7 @@ const SettingsPage = () => {
             
             <hr style={{ borderTop: '1px solid #e2e8f0', borderBottom: 'none', marginBottom: '1.5rem' }} />
 
-            <button onClick={() => navigate('/login')} style={{ width: '100%', background: '#fef2f2', color: '#ef4444', padding: '1rem', borderRadius: '8px', border: '1px solid #fecaca', fontWeight: '700', cursor: 'pointer', transition: 'background 0.2s' }}>
+            <button onClick={() => { localStorage.clear(); navigate('/login'); }} style={{ width: '100%', background: '#fef2f2', color: '#ef4444', padding: '1rem', borderRadius: '8px', border: '1px solid #fecaca', fontWeight: '700', cursor: 'pointer', transition: 'background 0.2s' }}>
               Sign Out Securely
             </button>
           </div>

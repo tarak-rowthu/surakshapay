@@ -6,7 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-
+import java.util.ArrayList;
+import java.util.List;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Entity
 @Table(name = "users")
 @Data
@@ -32,10 +34,18 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    private String location; // e.g., "Koramangala, Bangalore"
+    private String city;
+
+    private String location; // e.g., "Koramangala"
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    @Builder.Default
+    private List<Policy> policies = new ArrayList<>();
+
 
     @PrePersist
     protected void onCreate() {

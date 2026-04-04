@@ -16,6 +16,8 @@ public class UserDetailsImpl implements UserDetails {
     private String name;
     private String email;
     private String password;
+    private String city;
+    private String location;
     private Collection<? extends GrantedAuthority> authorities;
 
     public static UserDetailsImpl build(User user) {
@@ -25,6 +27,8 @@ public class UserDetailsImpl implements UserDetails {
                 user.getName(),
                 user.getEmail(),
                 user.getPassword(),
+                user.getCity(),
+                user.getLocation(),
                 Collections.singletonList(authority));
     }
 
@@ -39,6 +43,10 @@ public class UserDetailsImpl implements UserDetails {
     public String getEmail() {
         return email;
     }
+
+    public String getCity() { return city; }
+    
+    public String getLocation() { return location; }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

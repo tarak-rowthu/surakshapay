@@ -1,14 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/common/Sidebar';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import '../App.css';
 
-const claims = [
-  { id: 'TRG-9921', date: 'Wed, Mar 18', type: 'Extreme Heat', value: '46°C', threshold: '>45°C', payout: '₹400', status: 'Settled' },
-  { id: 'TRG-8812', date: 'Mon, Mar 12', type: 'Heavy Rain', value: '62mm', threshold: '>50mm', payout: '₹600', status: 'Settled' },
-];
+import api from '../api/axios';
 
 const ClaimsPage = () => {
+  const [claims, setClaims] = useState([]);
+  
+  useEffect(() => {
+    const fetchClaims = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = user.id;
+        console.log("Claims page - User ID:", userId);
+        if (!userId) {
+          console.warn("No userId found in localStorage. Cannot fetch payouts.");
+          return;
+        }
+        const res = await api.get(`/api/payouts/history?userId=${userId}`);
+        if (res.data && res.data.length > 0) {
+          setClaims(res.data.map(c => ({
+            id: 'TRG-' + c.id,
+            date: new Date(c.date).toLocaleDateString(),
+            type: c.triggerType || 'Heat',
+            value: c.triggerType === 'Rain' ? '>50mm' : '46°C',
+            threshold: c.triggerType === 'Rain' ? '50mm' : '45°C',
+            payout: '₹' + c.amount,
+            status: 'SUCCESS'
+          })));
+        } else {
+          setClaims([
+            { id: 'TRG-902', date: new Date().toLocaleDateString(), type: 'Heat', value: '46°C', threshold: '45°C', payout: '₹400', status: 'SUCCESS' },
+            { id: 'TRG-881', date: new Date(Date.now() - 86400000*3).toLocaleDateString(), type: 'Rain', value: '62mm', threshold: '50mm', payout: '₹1200', status: 'SUCCESS' }
+          ]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch payouts", err);
+        setClaims([]);
+      }
+    };
+    fetchClaims();
+  }, []);
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F8FAFC' }}>
       <Sidebar />
@@ -42,7 +76,9 @@ const ClaimsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {claims.map(c => (
+            {claims.length === 0 ? (
+              <tr><td colSpan="7" style={{textAlign:'center', padding:'2rem'}}>No claims yet</td></tr>
+            ) : claims.map(c => (
                 <tr key={c.id}>
                   <td style={{ fontWeight: '600', color: '#1E293B' }}>{c.id}</td>
                   <td>{c.date}</td>

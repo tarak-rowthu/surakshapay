@@ -1,43 +1,54 @@
-# SurakshaPay 🛡️
+# SurakshaPay: Automated Parametric Insurance System 🌤️💸
 
-**"Earn Without Fear. We’ve Got You Covered."**
+SurakshaPay is a Guidewire-style parametric insurance platform that completely automates payout processing based on external weather triggers. Designed for a Hackathon environment, this project demonstrates end-to-end parametric lifecycle handling: from dynamic environmental sensing to instant simulated UPI settlements with zero manual intervention.
 
-SurakshaPay is an AI-powered parametric insurance platform tailored to gig economy workers and delivery partners (e.g., Zepto) in India. It offers dynamic, hyper-local protection against environmental and operational disruptions like heavy rain, extreme heat, and poor air quality.
+## 🚀 Problem Statement
+Traditional claim processing forces users into prolonged documentation cycles, manual checks, and high overhead costs. **SurakshaPay drops the traditional claim model entirely.** By leveraging parametric thresholds (e.g. `Rainfall > 50mm` or `Temperature > 45°C`), our AI automation engine instantly spots eligible policies, routes payouts automatically, rejects fraudulent overlapping claims securely, and settles limits directly into a user's wallet via UPI.
 
-## The Problem
-Delivery partners depend entirely on daily task completions for income. Currently, extreme weather events forces them to choose between their safety and their earnings. Traditional insurance policies are slow, manual, and rarely cover specific localized daily income disruptions.
+## 🏗️ Architecture Flow
+1. **Trigger Engine (`ParametricTriggerService`):** Connects to mock IMD APIs/scheduled jobs evaluating real-time local conditions. 
+2. **Fraud Gateway:** Scans the database preventing overlapping (within 5 minutes) duplicate payout queries mitigating system leakage.
+3. **Core Registry & State (`PayoutRepository`):** Maps Payout models logging an initial `PENDING` state directly to explicit `User` records.
+4. **Settlement Processor (`PaymentService`):** Hits a simulated UPI settlement layer verifying transactions executing 1-time fallback Retry execution hooks on drops.
+5. **Event Alerting (`AlertService`):** Pushes asynchronous messages indexing exact `SUCCESS`, `FAILED`, and trigger statistics globally visible instantly to affected endpoints.
 
-## The Solution
-SurakshaPay provides **AI-powered parametric insurance**. Partners pay a small weekly micro-premium based on their risk profile. If conditions in their delivery zone exceed specific thresholds, a payout is automatically credited to their wallet—guaranteeing their income for that specific blocked period without any manual claims.
+## 💻 Tech Stack
+- **Backend:** Java Sprint Boot (JPA, Hibernate, Maven)
+- **Database:** MySQL (Native Schema Mappings, strict relational mappings dropped in favor of raw data optimization)
+- **Frontend:** React + Vite (Tailwind, Lucide Icons, Recharts)
+- **Execution:** Polling `setInterval` hooks rendering Real-time React UI cards.
 
-## Architecture
+## 🛠️ Setup Steps
+### Prerequisites
+- JDK 17+
+- Node.js 18+
+- MySQL Server (Root User/Password configured in `application.properties`)
 
-* **Frontend:** React + Tailwind CSS v4, built with Vite. Real-time data visualization via Recharts. 
-* **Backend:** Java Spring Boot REST API.
-* **Database:** MySQL to store user data, policies, and payout history.
-* **Authentication:** JWT-based protection.
+### Execution
+1. **Start Backend (Port 8080)**:
+   ```bash
+   cd surakshapay-backend
+   mvn compile spring-boot:run -Dmaven.test.skip=true
+   ```
+2. **Start Frontend (Port 5173)**:
+   ```bash
+   cd surakshapay-frontend
+   npm install
+   npm run dev
+   ```
 
-## AI Risk Engine & Parametric Logic
-1. **Dynamic Profiling**: A worker's risk score (and premium) is calculated based on their selected work location (zone risk) and chosen schedule (peak hour risk).
-2. **Parametric Triggers**:
-    * **Rainfall:** > 50mm within a 3-hour window
-    * **Temperature:** > 45°C during afternoon peaks
-    * **AQI:** > 400 (Severe health risk)
-3. **Smart Payouts**: Payout magnitude scales dynamically. (`Payout = Base Income Target × Time Factor × Severity Factor`)
-4. **Fraud Detection**: The system cross-references the partner's device GPS against regional IMD (Indian Meteorological Department) weather datasets to prevent spoofed claims.
+## 📡 Core API Endpoints
+- **Transactions & Triggers:**
+  - `POST /api/admin/simulate-trigger` - Initiates the Hackathon demo event explicitly generating Heat/Rain executions locally!
+  - `GET /api/payouts?userId={id}` - Fetches payout transactions including real-time `status` flags tracking Settlements.
+- **Aggregators:**
+  - `GET /api/dashboard/{userId}` - Fetches explicitly localized stats array, Payout lists, total limits, and top Alerts seamlessly.
+  - `GET /api/dashboard/alerts?userId={id}` - Dedicated Live Event streams pulling Guidewire logic executions!
 
-## Setup Steps
-
-### 1. Backend (Spring Boot)
-1. Navigate to the `surakshapay-backend` folder.
-2. Ensure you have MySQL running on `localhost:3306`. Create a database named `surakshapay`.
-3. Open `src/main/resources/application.properties` and update `spring.datasource.password` and `spring.datasource.username` to match your local setup.
-4. Run `mvn clean install` followed by `mvn spring-boot:run`. The backend will start on port 8080.
-
-### 2. Frontend (React)
-1. Navigate to the `surakshapay-frontend` folder.
-2. Install dependencies: `npm install`
-3. Start the Vite server: `npm run dev`
-4. Access the web app at **http://localhost:5173**
-
-Enjoy building the future of micro-insurance with SurakshaPay!
+## 🎯 Demo Steps (Hackathon Flow)
+1. **Login** to local Dashboard. 
+2. Observe the Active Policy coverage limits and the green `AI Risk Score`.
+3. Hit the **`🚀 Trigger Alert`** button natively firing the `Heat` trigger.
+4. The Backend will generate the explicitly hooked Payload resolving the new Payout.
+5. The `PaymentService` will artificially process the settlement hook issuing either `✅ SUCCESS` or `❌ FAILED`.
+6. Watch the UI automatically poll (every 15s) and render the updated live Alerts directly below the graphs, instantly formatting the new balance arrays natively!

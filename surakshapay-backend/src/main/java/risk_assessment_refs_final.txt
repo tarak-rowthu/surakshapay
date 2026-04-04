@@ -1,0 +1,1 @@
+﻿C:\project\suraksha_pay\surakshapay-backend\src\main\java\com\surakshapay\backend\controllers\PolicyController.java:71:AiRiskEngineService.RiskAssessment assessment = aiRiskEngineService.calculateRisk(location, expectedHours);

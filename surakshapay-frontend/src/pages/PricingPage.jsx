@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Check, X } from 'lucide-react';
+import { Check } from 'lucide-react';
+import { plans } from '../config/plans';
 import '../App.css';
 
 const PricingPage = () => {
@@ -13,59 +14,30 @@ const PricingPage = () => {
         </p>
       </div>
 
-      <div className="pricing-grid">
-        
-        {/* Basic Plan */}
-        <div className="pricing-card">
-          <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#1e293b' }}>Basic Guard</h3>
-          <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem' }}>Essential protection for part-time riders.</p>
-          
-          <div className="price-value">
-            ₹7<span>/week</span>
+      <div className="pricing-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+        {plans.map((plan, index) => (
+          <div key={index} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
+            {plan.popular && <div className="popular-badge">Most Popular</div>}
+            <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#1e293b' }}>{plan.name}</h3>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem' }}>Full hyper-local cover for daily pros.</p>
+            
+            <div className="price-value">
+              ₹{plan.price}<span>/week</span>
+            </div>
+            
+            <p style={{ fontWeight: '700', color: '#059669', fontSize: '1.1rem', marginBottom: '0' }}>Max Coverage: ₹{plan.coverage.toLocaleString()}</p>
+
+            <ul className="pricing-list">
+              {plan.features.map((feature, fIndex) => (
+                <li key={fIndex}><Check size={18} color="#059669" /> {feature}</li>
+              ))}
+            </ul>
+
+            <Link to="/onboarding" className={plan.popular ? "btn-primary" : "btn-outline"} style={!plan.popular ? { color: '#3b82f6', borderColor: '#3b82f6', textAlign: 'center' } : { textAlign: 'center' }}>
+              Select {plan.name.split(' ')[0]}
+            </Link>
           </div>
-          
-          <p style={{ fontWeight: '700', color: '#059669', fontSize: '1.1rem', marginBottom: '0' }}>Max Coverage: ₹4,000</p>
-
-          <ul className="pricing-list">
-            <li><Check size={18} color="#059669" /> Rainfall &gt; 65mm Trigger</li>
-            <li><Check size={18} color="#059669" /> Heat &gt; 48°C Trigger</li>
-            <li><Check size={18} color="#059669" /> Instant UPI Payout</li>
-            <li className="disabled"><X size={18} /> Severe AQI Protection</li>
-            <li className="disabled"><X size={18} /> N95 Mask Subsidy</li>
-            <li className="disabled"><X size={18} /> Zero Deductible</li>
-          </ul>
-
-          <Link to="/onboarding" className="btn-outline" style={{ color: '#3b82f6', borderColor: '#3b82f6', textAlign: 'center' }}>
-            Select Basic
-          </Link>
-        </div>
-
-        {/* Premium Plan */}
-        <div className="pricing-card popular">
-          <div className="popular-badge">Most Popular</div>
-          <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#1e293b' }}>Comprehensive</h3>
-          <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem' }}>Full hyper-local cover for daily pros.</p>
-          
-          <div className="price-value">
-            ₹15<span>/week</span>
-          </div>
-
-          <p style={{ fontWeight: '700', color: '#059669', fontSize: '1.1rem', marginBottom: '0' }}>Max Coverage: ₹10,000</p>
-
-          <ul className="pricing-list">
-            <li><Check size={18} color="#059669" /> Rainfall &gt; 50mm Trigger</li>
-            <li><Check size={18} color="#059669" /> Heat &gt; 45°C Trigger</li>
-            <li><Check size={18} color="#059669" /> Instant UPI Payout</li>
-            <li><Check size={18} color="#059669" /> Severe AQI Protection (&gt;400)</li>
-            <li><Check size={18} color="#059669" /> N95 Mask Subsidy included</li>
-            <li><Check size={18} color="#059669" /> Zero Deductible</li>
-          </ul>
-
-          <Link to="/onboarding" className="btn-primary" style={{ textAlign: 'center' }}>
-            Select Premium
-          </Link>
-        </div>
-
+        ))}
       </div>
     </div>
   );
