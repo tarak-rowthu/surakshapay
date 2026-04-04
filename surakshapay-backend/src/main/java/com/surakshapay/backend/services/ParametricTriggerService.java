@@ -16,8 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ParametricTriggerService {
 
-    @Autowired
-    private PolicyRepository policyRepository;
+    
 
     @Autowired
     private PayoutRepository payoutRepository;
