@@ -1,24 +1,24 @@
 package com.surakshapay.backend.services;
 
 import com.surakshapay.backend.models.Alert;
-import com.surakshapay.backend.repositories.AlertRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.surakshapay.backend.models.User;
+import com.surakshapay.backend.store.InMemoryStore;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 @Service
 public class AlertService {
 
-    @Autowired
-    private AlertRepository alertRepository;
-
     public void generateAlert(Long userId, String type, String message) {
+        User user = InMemoryStore.findUserById(userId).orElse(null);
+        if (user == null) return;
+
         Alert alert = Alert.builder()
-                .userId(userId)
+                .user(user)
                 .type(type)
                 .message(message)
                 .createdAt(LocalDateTime.now())
                 .build();
-        alertRepository.save(alert);
+        InMemoryStore.saveAlert(alert);
     }
 }

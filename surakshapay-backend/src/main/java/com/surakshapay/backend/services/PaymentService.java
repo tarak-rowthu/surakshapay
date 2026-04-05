@@ -1,20 +1,13 @@
 package com.surakshapay.backend.services;
 
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import java.util.Random;
 import com.surakshapay.backend.models.Payout;
-import com.surakshapay.backend.repositories.PayoutRepository;
 
 @Service
 public class PaymentService {
     private final Random random = new Random();
     
-    @Autowired
-    private PayoutRepository payoutRepository;
-
-    @Transactional
     public void processPayment(Payout payout) {
         System.out.println("Payout Status Before Save: " + payout.getStatus());
         try {
@@ -24,8 +17,7 @@ public class PaymentService {
             payout.setStatus("FAILED");
         }
 
-        // CRITICAL: persist status update
-        payoutRepository.save(payout);
+        // Status update is in-memory
         System.out.println("Payout Status After Payment: " + payout.getStatus());
     }
 

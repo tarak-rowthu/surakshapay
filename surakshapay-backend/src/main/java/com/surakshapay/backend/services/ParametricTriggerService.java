@@ -1,14 +1,12 @@
 package com.surakshapay.backend.services;
 
 import com.surakshapay.backend.models.*;
-import com.surakshapay.backend.repositories.PayoutRepository;
-import com.surakshapay.backend.repositories.PolicyRepository;
+import com.surakshapay.backend.store.InMemoryStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,11 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ParametricTriggerService {
 
-    
-
-    @Autowired
-    private PayoutRepository payoutRepository;
-    
     @Autowired
     private AlertService alertService;
     
@@ -28,10 +21,11 @@ public class ParametricTriggerService {
     private PaymentService paymentService;
 
     // Simulate parametric trigger
-    @Transactional
     public void simulateWeatherEvent(String location, String eventType, String severity) {
         // Fetch active policies for mock payout calculation
-        List<Policy> activePolicies = policyRepository.findByStatus(PolicyStatus.ACTIVE);
+        List<Policy> activePolicies = InMemoryStore.policies.stream()
+                .filter(p -> p.getStatus() == PolicyStatus.ACTIVE)
+                .toList();
 
         for (Policy policy : activePolicies) {
             // Simplified logic: If the policy user location matches and conditions met
@@ -75,28 +69,39 @@ public class ParametricTriggerService {
         
         // --- FRAUD DETECTION CHECKS ---
         Long userId = policy.getUser().getId();
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
 
-        // CHECK 1: 5-MIN LOCKOUT (Prevent Duplicate)
-        // CHECK 1: 5-MIN LOCKOUT (Prevent Duplicate)
-        if (payoutRepository.existsByUserIdAndTriggerTypeAndCreatedAtAfter(userId, eventType, now.minusMinutes(5))) {
-            System.out.println("Duplicate payout prevented for user " + userId + " - " + eventType);
+        // CHECK 1: 5-MIN LOCKOUT
+        LocalDateTime cutoff5 = now.minusMinutes(5);
+        boolean duplicate = InMemoryStore.payouts.stream()
+                .anyMatch(p -> p.getUser().getId().equals(userId) && p.getTriggerType().equalsIgnoreCase(eventType) && p.getCreatedAt().isAfter(cutoff5));
+        
+        if (duplicate) {
+            log.warn("Duplicate payout prevented for user {} - {}", userId, eventType);
             alertService.generateAlert(userId, "WARNING", "Duplicate payout blocked");
             return;
         }
 
         // CAP 2: Daily limit of 5000 payouts per user
-        Double dailyTotal = payoutRepository.sumAmountByUserIdAndCreatedAtAfter(userId, now.toLocalDate().atStartOfDay());
+        LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+        double dailyTotal = InMemoryStore.payouts.stream()
+                .filter(p -> p.getUser().getId().equals(userId) && p.getCreatedAt().isAfter(startOfDay))
+                .mapToDouble(Payout::getAmount)
+                .sum();
+        
         if (dailyTotal > 5000.0) {
-            System.out.println("Daily payout limit exceeded for user " + userId);
+            log.warn("Daily payout limit exceeded for user {}", userId);
             return;
         }
 
         // CAP 3: Do not trigger more than 3 times in 10 minutes
-        // CAP 3: Do not trigger more than 3 times in 10 minutes
-        long recentTriggers = payoutRepository.countByUserIdAndCreatedAtAfter(userId, now.minusMinutes(10));
+        LocalDateTime cutoff10 = now.minusMinutes(10);
+        long recentTriggers = InMemoryStore.payouts.stream()
+                .filter(p -> p.getUser().getId().equals(userId) && p.getCreatedAt().isAfter(cutoff10))
+                .count();
+        
         if (recentTriggers >= 3) {
-            System.out.println("Too many triggers in last 10 minutes for user " + userId);
+            log.warn("Too many triggers in last 10 minutes for user {}", userId);
             return;
         }
 
@@ -109,15 +114,13 @@ public class ParametricTriggerService {
                 .createdAt(now)
                 .build();
 
-        System.out.println("Creating payout with PENDING");
         // SAVE FIRST
-        payout = payoutRepository.save(payout);
+        payout = InMemoryStore.savePayout(payout);
 
-        System.out.println("Processing payout to SUCCESS");
-        // REQUIRED FIX (MOST IMPORTANT)
+        // PROCESS PAYMENT
         paymentService.processPayment(payout);
         if ("FAILED".equals(payout.getStatus())) {
-            System.out.println("Retry #1: Attempting payment again for User " + userId);
+            log.info("Retry #1: Attempting payment again for User {}", userId);
             paymentService.processPayment(payout);
         }
         

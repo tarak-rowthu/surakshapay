@@ -23,10 +23,4 @@ public class GlobalExceptionHandler {
         log.error("Unhandled Exception: {}", ex.getMessage(), ex);
         return new ResponseEntity<>(new MessageResponse("An unexpected error occurred: " + ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    
-    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
-    public ResponseEntity<?> handleDataIntegrityViolationException(org.springframework.dao.DataIntegrityViolationException ex, WebRequest request) {
-        log.error("Database constraint violation: {}", ex.getMessage());
-        return new ResponseEntity<>(new MessageResponse("Database error: Possible duplicate entry or constraint violation."), HttpStatus.CONFLICT);
-    }
 }
