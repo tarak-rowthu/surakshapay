@@ -20,7 +20,7 @@ import java.util.Arrays;
 
 @Configuration
 // @EnableMethodSecurity (Temporarily disabled to allow bypassing controller @PreAuthorize checks)
-public class WebSecurityConfig {
+public class SecurityConfig {
 
     @Autowired
     UserDetailsServiceImpl userDetailsService;
@@ -67,7 +67,7 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
